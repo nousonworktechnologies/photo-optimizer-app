@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007AFF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PhotoOptimizer">
+    
+    <title>Photo Optimizer</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .upload-area {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #007AFF;
+            background: #f0f7ff;
+        }
+        
+        .upload-area .icon {
+            font-size: 50px;
+            margin-bottom: 15px;
+        }
+        
+        .upload-area p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .upload-area input {
+            display: none;
+        }
+        
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background: #eee;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007AFF, #5856D6);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .photo-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-card .badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .badge-best { background: #34C759; }
+        .badge-eyes { background: #FF3B30; }
+        .badge-blur { background: #FF9500; }
+        .badge-dup { background: #8E8E93; }
+        
+        .photo-card .score {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        
+        .group-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .group-header h3 {
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .group-count {
+            background: #eee;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-top: 10px;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .feedback-form {
+            display: none;
+        }
+        
+        .rating {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .rating-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .rating-btn.selected {
+            border-color: #007AFF;
+            background: #f0f7ff;
+        }
+        
+        .feedback-question {
+            margin-bottom: 20px;
+        }
+        
+        .feedback-question label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #007AFF;
+        }
+        
+        .config-section {
+            background: #f8f8f8;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .config-section label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .config-section input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .config-section input:focus {
+            outline: none;
+            border-color: #007AFF;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .status-connected { background: #d4edda; color: #155724; }
+        .status-disconnected { background: #f8d7da; color: #721c24; }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            display: none;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007AFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📸 Photo Optimizer</h1>
+            <p>Find the best photos automatically</p>
+        </div>
+        
+        <!-- Server Config Card -->
+        <div class="card" id="configCard">
+            <h2>⚙️ Server Connection</h2>
+            <div class="config-section">
+                <label>Backend Server URL:</label>
+                <input type="text" id="serverUrl" placeholder="https://your-server.onrender.com" value="">
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">
+                    Enter your deployed server URL, or leave empty for demo mode (limited features)
+                </p>
+            </div>
+            <button class="btn btn-secondary" id="testConnection">
+                🔗 Test Connection
+            </button>
+            <div id="connectionStatus" style="text-align: center; margin-top: 15px;"></div>
+        </div>
+        
+        <!-- Upload Card -->
+        <div class="card" id="uploadCard">
+            <h2>📷 Select Photos</h2>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="icon">📷</div>
+                <p><strong>Tap to select photos</strong></p>
+                <p>or drag and drop here</p>
+                <input type="file" id="fileInput" accept="image/*" multiple>
+            </div>
+            
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">Uploading photos...</div>
+            </div>
+            
+            <div class="error-message" id="errorMessage"></div>
+        </div>
+        
+        <!-- Results Card -->
+        <div class="card results" id="resultsCard">
+            <h2>✨ Results</h2>
+            
+            <div class="stats" id="statsContainer"></div>
+            
+            <div id="photoGroups"></div>
+            
+            <button class="btn btn-primary" id="saveBtn">
+                💾 Save Best Photos
+            </button>
+            
+            <button class="btn btn-secondary" id="feedbackBtn">
+                📝 Give Feedback
+            </button>
+            
+            <button class="btn btn-secondary" id="resetBtn">
+                🔄 Start Over
+            </button>
+        </div>
+        
+        <!-- Feedback Card -->
+        <div class="card feedback-form" id="feedbackCard">
+            <h2>📝 Beta Feedback</h2>
+            <p style="color: #666; margin-bottom: 20px;">Help us improve!</p>
+            
+            <div class="feedback-question">
+                <label>How accurate were the results?</label>
+                <div class="rating" data-name="accuracy">
+                    <button class="rating-btn" data-value="1">1</button>
+                    <button class="rating-btn" data-value="2">2</button>
+                    <button class="rating-btn" data-value="3">3</button>
+                    <button class="rating-btn" data-value="4">4</button>
+                    <button class="rating-btn" data-value="5">5</button>
+                </div>
+            </div>
+            
+            <div class="feedback-question">
+                <label>Eye detection accuracy?</label>
+                <div class="rating" data-name="eyeDetection">
+                    <button class="rating-btn" data-value="1">1</button>
+                    <button class="rating-btn" data-value="2">2</button>
+                    <button class="rating-btn" data-value="3">3</button>
+                    <button class="rating-btn" data-value="4">4</button>
+                    <button class="rating-btn" data-value="5">5</button>
+                </div>
+            </div>
+            
+            <div class="feedback-question">
+                <label>Photo grouping accuracy?</label>
+                <div class="rating" data-name="grouping">
+                    <button class="rating-btn" data-value="1">1</button>
+                    <button class="rating-btn" data-value="2">2</button>
+                    <button class="rating-btn" data-value="3">3</button>
+                    <button class="rating-btn" data-value="4">4</button>
+                    <button class="rating-btn" data-value="5">5</button>
+                </div>
+            </div>
+            
+            <div class="feedback-question">
+                <label>Any photos it got wrong?</label>
+                <textarea id="mistakes" rows="3" placeholder="Describe any mistakes..."></textarea>
+            </div>
+            
+            <div class="feedback-question">
+                <label>Feature requests?</label>
+                <textarea id="features" rows="3" placeholder="What would you like added?"></textarea>
+            </div>
+            
+            <button class="btn btn-primary" id="submitFeedback">
+                ✅ Submit Feedback
+            </button>
+            
+            <button class="btn btn-secondary" id="backToResults">
+                ← Back to Results
+            </button>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+    
+    <script>
+        // ============================================
+        // Configuration
+        // ============================================
+        
+        let API_URL = localStorage.getItem('photoOptimizerServer') || '';
+        let useLocalMode = !API_URL;
+        let analysisResults = [];
+        
+        // DOM Elements
+        const serverUrlInput = document.getElementById('serverUrl');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const uploadCard = document.getElementById('uploadCard');
+        const resultsCard = document.getElementById('resultsCard');
+        const feedbackCard = document.getElementById('feedbackCard');
+        const configCard = document.getElementById('configCard');
+        const errorMessage = document.getElementById('errorMessage');
+        const toast = document.getElementById('toast');
+        
+        // Initialize
+        serverUrlInput.value = API_URL;
+        
+        // ============================================
+        // Server Connection
+        // ============================================
+        
+        document.getElementById('testConnection').addEventListener('click', async () => {
+            const url = serverUrlInput.value.trim();
+            const statusDiv = document.getElementById('connectionStatus');
+            
+            if (!url) {
+                statusDiv.innerHTML = '<span class="status-badge status-disconnected">Demo Mode (limited)</span>';
+                useLocalMode = true;
+                localStorage.removeItem('photoOptimizerServer');
+                showToast('Using demo mode - limited features');
+                return;
+            }
+            
+            statusDiv.innerHTML = '<div class="spinner"></div>';
+            
+            try {
+                const response = await fetch(`${url}/health`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    API_URL = url;
+                    useLocalMode = false;
+                    localStorage.setItem('photoOptimizerServer', url);
+                    statusDiv.innerHTML = '<span class="status-badge status-connected">✅ Connected!</span>';
+                    showToast('Server connected successfully!');
+                } else {
+                    throw new Error('Server returned error');
+                }
+            } catch (e) {
+                statusDiv.innerHTML = '<span class="status-badge status-disconnected">❌ Connection failed</span>';
+                showToast('Could not connect to server');
+                console.error(e);
+            }
+        });
+        
+        // ============================================
+        // File Upload
+        // ============================================
+        
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+        
+        async function handleFiles(files) {
+            if (!files.length) return;
+            
+            const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+            
+            if (!imageFiles.length) {
+                showToast('Please select image files');
+                return;
+            }
+            
+            errorMessage.style.display = 'none';
+            progressContainer.style.display = 'block';
+            uploadArea.style.display = 'none';
+            
+            if (useLocalMode) {
+                await analyzeLocally(imageFiles);
+            } else {
+                await analyzeWithServer(imageFiles);
+            }
+        }
+        
+        // ============================================
+        // Server Analysis (Real Python Algorithm)
+        // ============================================
+        
+        async function analyzeWithServer(files) {
+            try {
+                progressText.textContent = 'Uploading photos to server...';
+                progressFill.style.width = '30%';
+                
+                const formData = new FormData();
+                files.forEach(file => {
+                    formData.append('files[]', file);
+                });
+                
+                progressText.textContent = 'Analyzing photos...';
+                progressFill.style.width = '60%';
+                
+                const response = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Analysis failed');
+                }
+                
+                progressFill.style.width = '100%';
+                progressText.textContent = 'Complete!';
+                
+                displayResults(data.groups, data.stats);
+                
+            } catch (e) {
+                console.error(e);
+                errorMessage.textContent = `Error: ${e.message}. Try demo mode or check server.`;
+                errorMessage.style.display = 'block';
+                progressContainer.style.display = 'none';
+                uploadArea.style.display = 'block';
+            }
+        }
+        
+        // ============================================
+        // Local Analysis (Simplified JavaScript)
+        // ============================================
+        
+        async function analyzeLocally(files) {
+            const results = [];
+            
+            for (let i = 0; i < files.length; i++) {
+                progressFill.style.width = `${((i + 1) / files.length) * 100}%`;
+                progressText.textContent = `Analyzing ${i + 1} of ${files.length}...`;
+                
+                const result = await analyzePhotoLocally(files[i]);
+                if (result) results.push(result);
+            }
+            
+            progressText.textContent = 'Grouping photos...';
+            const groups = groupPhotosLocally(results);
+            
+            const stats = {
+                total: results.length,
+                groups: groups.length,
+                best_count: groups.length,
+                closed_eyes: results.filter(r => r.has_closed_eyes).length,
+                blurry: results.filter(r => r.is_blurry).length,
+                space_saved_percent: Math.round((1 - groups.length / results.length) * 100)
+            };
+            
+            displayResults(groups, stats);
+        }
+        
+        function analyzePhotoLocally(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        // Simple local analysis
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const size = 200;
+                        
+                        canvas.width = size;
+                        canvas.height = size;
+                        ctx.drawImage(img, 0, 0, size, size);
+                        
+                        const imageData = ctx.getImageData(0, 0, size, size);
+                        const data = imageData.data;
+                        
+                        // Calculate metrics
+                        let brightness = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            brightness += (data[i] + data[i+1] + data[i+2]) / 3;
+                        }
+                        brightness /= (data.length / 4);
+                        
+                        // Simple sharpness
+                        let sharpness = 0;
+                        for (let y = 1; y < size - 1; y++) {
+                            for (let x = 1; x < size - 1; x++) {
+                                const idx = (y * size + x) * 4;
+                                const center = data[idx];
+                                const left = data[idx - 4];
+                                const right = data[idx + 4];
+                                sharpness += Math.abs(2 * center - left - right);
+                            }
+                        }
+                        sharpness /= ((size - 2) * (size - 2));
+                        
+                        // Simple hash
+                        let hash = '';
+                        const smallCanvas = document.createElement('canvas');
+                        const smallCtx = smallCanvas.getContext('2d');
+                        smallCanvas.width = 8;
+                        smallCanvas.height = 8;
+                        smallCtx.drawImage(img, 0, 0, 8, 8);
+                        const smallData = smallCtx.getImageData(0, 0, 8, 8).data;
+                        
+                        let avg = 0;
+                        const grays = [];
+                        for (let i = 0; i < smallData.length; i += 4) {
+                            const gray = (smallData[i] + smallData[i+1] + smallData[i+2]) / 3;
+                            grays.push(gray);
+                            avg += gray;
+                        }
+                        avg /= 64;
+                        grays.forEach(g => hash += g > avg ? '1' : '0');
+                        
+                        // Score
+                        const score = (sharpness / 50) * 0.5 + (1 - Math.abs(brightness - 127) / 127) * 0.5;
+                        
+                        // Thumbnail
+                        const thumbCanvas = document.createElement('canvas');
+                        const thumbCtx = thumbCanvas.getContext('2d');
+                        const thumbSize = 200;
+                        const scale = Math.max(thumbSize / img.width, thumbSize / img.height);
+                        thumbCanvas.width = thumbSize;
+                        thumbCanvas.height = thumbSize;
+                        thumbCtx.drawImage(img, 
+                            (thumbSize - img.width * scale) / 2,
+                            (thumbSize - img.height * scale) / 2,
+                            img.width * scale, img.height * scale);
+                        
+                        resolve({
+                            filename: file.name,
+                            score: score,
+                            sharpness: sharpness,
+                            brightness: brightness,
+                            contrast: 50,
+                            face_count: 0,
+                            eye_score: 1,
+                            has_closed_eyes: false,
+                            has_blinking: false,
+                            is_blurry: sharpness < 15,
+                            phash: hash,
+                            thumbnail: thumbCanvas.toDataURL('image/jpeg', 0.7)
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function groupPhotosLocally(results, threshold = 12) {
+            const n = results.length;
+            const parent = Array.from({length: n}, (_, i) => i);
+            
+            const find = (x) => {
+                if (parent[x] !== x) parent[x] = find(parent[x]);
+                return parent[x];
+            };
+            
+            const union = (x, y) => {
+                const px = find(x), py = find(y);
+                if (px !== py) parent[px] = py;
+            };
+            
+            const hashDist = (h1, h2) => {
+                let dist = 0;
+                for (let i = 0; i < Math.min(h1.length, h2.length); i++) {
+                    if (h1[i] !== h2[i]) dist++;
+                }
+                return dist;
+            };
+            
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    if (hashDist(results[i].phash, results[j].phash) <= threshold) {
+                        union(i, j);
+                    }
+                }
+            }
+            
+            const groups = {};
+            for (let i = 0; i < n; i++) {
+                const root = find(i);
+                if (!groups[root]) groups[root] = [];
+                groups[root].push(results[i]);
+            }
+            
+            return Object.values(groups).map((group, idx) => {
+                group.sort((a, b) => b.score - a.score);
+                group[0].is_best = true;
+                group[0].duplicate_type = 'original';
+                group.forEach((r, i) => {
+                    r.group_id = idx + 1;
+                    if (i > 0) r.duplicate_type = 'similar';
+                });
+                return group;
+            }).sort((a, b) => b.length - a.length);
+        }
+        
+        // ============================================
+        // Display Results
+        // ============================================
+        
+        function displayResults(groups, stats) {
+            progressContainer.style.display = 'none';
+            uploadArea.style.display = 'block';
+            uploadCard.style.display = 'none';
+            configCard.style.display = 'none';
+            resultsCard.style.display = 'block';
+            
+            analysisResults = groups.flat();
+            
+            document.getElementById('statsContainer').innerHTML = `
+                <div class="stat">
+                    <div class="stat-value">${stats.total}</div>
+                    <div class="stat-label">Total Photos</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${stats.groups}</div>
+                    <div class="stat-label">Groups</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${stats.best_count}</div>
+                    <div class="stat-label">To Keep</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">${stats.space_saved_percent}%</div>
+                    <div class="stat-label">Space Saved</div>
+                </div>
+            `;
+            
+            let groupsHTML = '';
+            groups.forEach((group, idx) => {
+                groupsHTML += `
+                    <div class="group-header">
+                        <h3>Group ${idx + 1}</h3>
+                        <span class="group-count">${group.length} photo${group.length > 1 ? 's' : ''}</span>
+                    </div>
+                    <div class="photo-grid">
+                `;
+                
+                group.forEach(photo => {
+                    let badge = '';
+                    if (photo.is_best) {
+                        badge = '<span class="badge badge-best">⭐ BEST</span>';
+                    } else if (photo.has_closed_eyes) {
+                        badge = '<span class="badge badge-eyes">👁️ CLOSED</span>';
+                    } else if (photo.is_blurry) {
+                        badge = '<span class="badge badge-blur">📷 BLURRY</span>';
+                    } else {
+                        badge = '<span class="badge badge-dup">SIMILAR</span>';
+                    }
+                    
+                    const scoreDisplay = typeof photo.score === 'number' ? 
+                        Math.round(photo.score * 100) : photo.score;
+                    
+                    groupsHTML += `
+                        <div class="photo-card">
+                            <img src="${photo.thumbnail}" alt="${photo.filename}">
+                            ${badge}
+                            <span class="score">${scoreDisplay}</span>
+                        </div>
+                    `;
+                });
+                
+                groupsHTML += '</div>';
+            });
+            
+            document.getElementById('photoGroups').innerHTML = groupsHTML;
+        }
+        
+        // ============================================
+        // Button Handlers
+        // ============================================
+        
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            resultsCard.style.display = 'none';
+            uploadCard.style.display = 'block';
+            configCard.style.display = 'block';
+            fileInput.value = '';
+            analysisResults = [];
+        });
+        
+        document.getElementById('feedbackBtn').addEventListener('click', () => {
+            resultsCard.style.display = 'none';
+            feedbackCard.style.display = 'block';
+        });
+        
+        document.getElementById('backToResults').addEventListener('click', () => {
+            feedbackCard.style.display = 'none';
+            resultsCard.style.display = 'block';
+        });
+        
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            const bestPhotos = analysisResults.filter(r => r.is_best);
+            showToast(`${bestPhotos.length} best photos identified!`);
+        });
+        
+        document.getElementById('submitFeedback').addEventListener('click', () => {
+            const feedback = {
+                timestamp: new Date().toISOString(),
+                numPhotos: analysisResults.length,
+                serverMode: !useLocalMode,
+                accuracy: document.querySelector('[data-name="accuracy"] .selected')?.dataset.value || 0,
+                eyeDetection: document.querySelector('[data-name="eyeDetection"] .selected')?.dataset.value || 0,
+                grouping: document.querySelector('[data-name="grouping"] .selected')?.dataset.value || 0,
+                mistakes: document.getElementById('mistakes').value,
+                features: document.getElementById('features').value
+            };
+            
+            navigator.clipboard.writeText(JSON.stringify(feedback, null, 2))
+                .then(() => showToast('Feedback copied! Please send to developer.'))
+                .catch(() => showToast('Thanks for your feedback!'));
+            
+            feedbackCard.style.display = 'none';
+            resultsCard.style.display = 'block';
+        });
+        
+        // Rating buttons
+        document.querySelectorAll('.rating').forEach(rating => {
+            rating.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    rating.querySelectorAll('.rating-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+        });
+        
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
