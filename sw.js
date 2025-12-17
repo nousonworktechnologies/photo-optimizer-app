@@ -1,33 +1,27 @@
 // Service Worker for Photo Optimizer PWA
-const CACHE_NAME = 'photo-optimizer-v1';
+// Version 2 - Fixed caching issues
+const CACHE_NAME = 'photo-optimizer-v2';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/manifest.json'
+    './',
+    './index.html',
+    './manifest.json',
+    './icon-192.png',
+    './icon-512.png'
 ];
 
-// Install event
+// Install event - cache files
 self.addEventListener('install', (event) => {
+    self.skipWaiting();
+    
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(urlsToCache))
-    );
-});
-
-// Fetch event
-self.addEventListener('fetch', (event) => {
-    event.respondWith(
-        caches.match(event.request)
-            .then((response) => {
-                if (response) {
-                    return response;
-                }
-                return fetch(event.request);
+            .then((cache) => {
+                return cache.addAll(urlsToCache);
             })
     );
 });
 
-// Activate event
+// Activate event - clean old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
@@ -38,6 +32,36 @@ self.addEventListener('activate', (event) => {
                     }
                 })
             );
+        }).then(() => {
+            return self.clients.claim();
         })
+    );
+});
+
+// Fetch event - network first, then cache
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        fetch(event.request)
+            .then((response) => {
+                if (response.status === 200) {
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME)
+                        .then((cache) => {
+                            cache.put(event.request, responseClone);
+                        });
+                }
+                return response;
+            })
+            .catch(() => {
+                return caches.match(event.request)
+                    .then((response) => {
+                        if (response) {
+                            return response;
+                        }
+                        if (event.request.mode === 'navigate') {
+                            return caches.match('./index.html');
+                        }
+                    });
+            })
     );
 });
