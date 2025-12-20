@@ -618,9 +618,10 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    API_URL = url;
+                    // Remove trailing slashes from URL
+                    API_URL = url.replace(/\/+$/, '');
                     serverVersion = data.version || 'unknown';
-                    localStorage.setItem('photoOptimizerServer', url);
+                    localStorage.setItem('photoOptimizerServer', API_URL);
                     statusDiv.innerHTML = `<span class="status-badge status-connected">✅ Connected! (${serverVersion})</span>`;
                     showToast('Server connected successfully!');
                 } else {
@@ -708,7 +709,10 @@
                 
                 const startTime = Date.now();
                 
-                const response = await fetch(`${API_URL}/analyze`, {
+                // Remove trailing slash from API_URL if present
+                const baseUrl = API_URL.replace(/\/+$/, '');
+                
+                const response = await fetch(`${baseUrl}/analyze`, {
                     method: 'POST',
                     body: formData
                 });
