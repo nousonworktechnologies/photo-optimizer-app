@@ -442,7 +442,7 @@
         <div class="header">
             <h1>📸 Photo Optimizer</h1>
             <p>Find the best photos automatically</p>
-            <div class="version-badge">v3.0 - Full Resolution</div>
+            <div class="version-badge">v3.1 - Batch Upload</div>
         </div>
         
         <!-- Server Config Card -->
@@ -683,70 +683,238 @@
         }
         
         // ============================================
-        // Server Analysis - FULL RESOLUTION
+        // BATCHED SERVER ANALYSIS - v3.1.0
+        // Processes large uploads in chunks to avoid server overload
         // ============================================
+        
+        const BATCH_SIZE = 5; // Max photos per batch (safe for 512MB RAM)
+        const MAX_FILE_SIZE_MB = 15; // Max single file size in MB
+        const MAX_DIMENSION = 1600; // Resize large images to this max dimension
+        const JPEG_QUALITY = 0.85; // Quality for resized images
+        
+        // Resize image if too large (saves bandwidth & server memory)
+        async function resizeImage(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Check if resize needed
+                    if (img.width <= MAX_DIMENSION && img.height <= MAX_DIMENSION) {
+                        resolve(file);
+                        return;
+                    }
+                    
+                    // Calculate new dimensions
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > MAX_DIMENSION) {
+                            height = Math.round(height * MAX_DIMENSION / width);
+                            width = MAX_DIMENSION;
+                        }
+                    } else {
+                        if (height > MAX_DIMENSION) {
+                            width = Math.round(width * MAX_DIMENSION / height);
+                            height = MAX_DIMENSION;
+                        }
+                    }
+                    
+                    // Resize using canvas
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    canvas.toBlob((blob) => {
+                        resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                    }, 'image/jpeg', JPEG_QUALITY);
+                };
+                img.onerror = () => resolve(file);
+                img.src = URL.createObjectURL(file);
+            });
+        }
         
         async function analyzeWithServer(files) {
             try {
-                // Create FormData with ORIGINAL files (no resizing!)
-                const formData = new FormData();
+                const totalFiles = files.length;
                 
-                let totalSize = 0;
-                for (const file of files) {
-                    formData.append('files[]', file, file.name);
-                    totalSize += file.size;
+                // Split files into batches
+                const batches = [];
+                for (let i = 0; i < files.length; i += BATCH_SIZE) {
+                    batches.push(Array.from(files).slice(i, i + BATCH_SIZE));
                 }
                 
-                const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
-                progressText.textContent = `Uploading ${files.length} photos (${totalSizeMB} MB)...`;
-                progressFill.style.width = '20%';
+                console.log(`Processing ${totalFiles} files in ${batches.length} batch(es)`);
                 
-                // Log debug info
-                console.log(`Uploading ${files.length} files, total size: ${totalSizeMB} MB`);
-                
-                progressText.textContent = 'Analyzing photos on server...';
-                progressFill.style.width = '50%';
+                // Track all results across batches
+                let allGroups = [];
+                let combinedStats = {
+                    total: 0,
+                    groups: 0,
+                    keep: 0,
+                    delete: 0,
+                    best_count: 0,
+                    space_saved_percent: 0,
+                    closed_eyes: 0,
+                    blurry: 0
+                };
+                let allErrors = [];
+                let groupIndexOffset = 0;
                 
                 const startTime = Date.now();
                 
-                // Remove trailing slash from API_URL if present
-                const baseUrl = API_URL.replace(/\/+$/, '');
-                
-                const response = await fetch(`${baseUrl}/analyze`, {
-                    method: 'POST',
-                    body: formData
-                });
+                // Process each batch sequentially
+                for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+                    const batch = batches[batchIndex];
+                    const batchNum = batchIndex + 1;
+                    
+                    // Update progress UI
+                    const progressPercent = Math.round((batchIndex / batches.length) * 80) + 10;
+                    progressFill.style.width = `${progressPercent}%`;
+                    progressText.textContent = `Processing batch ${batchNum} of ${batches.length} (${batch.length} photos)...`;
+                    
+                    // Resize images in this batch
+                    const resizedFiles = [];
+                    for (let i = 0; i < batch.length; i++) {
+                        const file = batch[i];
+                        
+                        // Skip files that are too large
+                        if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                            console.warn(`Skipping ${file.name}: too large (${(file.size/1024/1024).toFixed(1)}MB)`);
+                            allErrors.push(`${file.name}: File too large (max ${MAX_FILE_SIZE_MB}MB)`);
+                            continue;
+                        }
+                        
+                        progressText.textContent = `Batch ${batchNum}/${batches.length}: Preparing photo ${i + 1}/${batch.length}...`;
+                        const resized = await resizeImage(file);
+                        resizedFiles.push(resized);
+                    }
+                    
+                    if (resizedFiles.length === 0) {
+                        console.warn(`Batch ${batchNum}: No valid files to process`);
+                        continue;
+                    }
+                    
+                    // Create FormData for this batch
+                    const formData = new FormData();
+                    let batchSize = 0;
+                    
+                    for (const file of resizedFiles) {
+                        formData.append('files[]', file, file.name);
+                        batchSize += file.size;
+                    }
+                    
+                    const batchSizeMB = (batchSize / 1024 / 1024).toFixed(2);
+                    console.log(`Batch ${batchNum}: Uploading ${resizedFiles.length} files (${batchSizeMB} MB)`);
+                    progressText.textContent = `Batch ${batchNum}/${batches.length}: Uploading ${batchSizeMB} MB...`;
+                    
+                    // Send batch to server
+                    const baseUrl = API_URL.replace(/\/+$/, '');
+                    
+                    try {
+                        const response = await fetch(`${baseUrl}/analyze`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`Server error: ${response.status} - ${errorText}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (!data.success) {
+                            throw new Error(data.error || 'Analysis failed');
+                        }
+                        
+                        // Merge results - adjust group indices to be unique across batches
+                        if (data.groups && data.groups.length > 0) {
+                            const adjustedGroups = data.groups.map((group, idx) => {
+                                // Adjust group_id for each photo in the group
+                                if (Array.isArray(group)) {
+                                    return group.map(photo => ({
+                                        ...photo,
+                                        batch_group_id: groupIndexOffset + idx + 1
+                                    }));
+                                }
+                                return group;
+                            });
+                            allGroups = allGroups.concat(adjustedGroups);
+                            groupIndexOffset += data.groups.length;
+                        }
+                        
+                        // Merge stats
+                        if (data.stats) {
+                            combinedStats.total += data.stats.total || 0;
+                            combinedStats.groups += data.stats.groups || 0;
+                            combinedStats.keep += data.stats.keep || 0;
+                            combinedStats.best_count += data.stats.best_count || 0;
+                            combinedStats.delete += data.stats.delete || 0;
+                            combinedStats.closed_eyes += data.stats.closed_eyes || 0;
+                            combinedStats.blurry += data.stats.blurry || 0;
+                        }
+                        
+                        // Collect any per-file errors from server
+                        if (data.errors && data.errors.length > 0) {
+                            allErrors = allErrors.concat(data.errors);
+                        }
+                        
+                        console.log(`Batch ${batchNum} complete: ${data.groups?.length || 0} groups found`);
+                        
+                    } catch (batchError) {
+                        console.error(`Batch ${batchNum} failed:`, batchError.message);
+                        allErrors.push(`Batch ${batchNum} failed: ${batchError.message}`);
+                        // Continue with next batch instead of failing entirely
+                        continue;
+                    }
+                    
+                    // Small delay between batches to let server recover memory
+                    if (batchIndex < batches.length - 1) {
+                        progressText.textContent = `Batch ${batchNum} done. Preparing next batch...`;
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
                 
                 const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
                 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                // Calculate overall space saved percentage
+                if (combinedStats.total > 0) {
+                    combinedStats.space_saved_percent = Math.round(
+                        ((combinedStats.total - combinedStats.best_count) / combinedStats.total) * 100
+                    );
                 }
                 
-                const data = await response.json();
-                
-                if (!data.success) {
-                    throw new Error(data.error || 'Analysis failed');
+                // Check if we got any results at all
+                if (allGroups.length === 0 && allErrors.length > 0) {
+                    throw new Error(`All batches failed: ${allErrors.slice(0, 3).join(', ')}${allErrors.length > 3 ? '...' : ''}`);
                 }
                 
                 progressFill.style.width = '100%';
                 progressText.textContent = 'Complete!';
                 
-                // Show debug info
+                // Show debug info with batch information
                 debugInfo.innerHTML = `
                     <strong>Debug Info:</strong><br>
                     Server: ${serverVersion}<br>
-                    Photos: ${files.length}<br>
-                    Upload size: ${totalSizeMB} MB<br>
+                    Photos: ${totalFiles} (${batches.length} batch${batches.length > 1 ? 'es' : ''})<br>
                     Analysis time: ${elapsed}s<br>
-                    Groups: ${data.stats.groups}<br>
-                    Closed eyes: ${data.stats.closed_eyes}<br>
-                    Blurry: ${data.stats.blurry}
+                    Groups: ${combinedStats.groups}<br>
+                    Keep: ${combinedStats.best_count} | Delete: ${combinedStats.total - combinedStats.best_count}<br>
+                    Closed eyes: ${combinedStats.closed_eyes}<br>
+                    Blurry: ${combinedStats.blurry}
+                    ${allErrors.length > 0 ? `<br><span style="color: orange;">⚠️ Warnings: ${allErrors.length}</span>` : ''}
                 `;
                 debugInfo.classList.add('show');
                 
-                displayResults(data.groups, data.stats);
+                // Display merged results from all batches
+                displayResults(allGroups, combinedStats);
+                
+                // Log warnings for debugging
+                if (allErrors.length > 0) {
+                    console.warn('Processing warnings:', allErrors);
+                }
                 
             } catch (e) {
                 console.error('Analysis error:', e);
