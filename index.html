@@ -294,51 +294,190 @@
             display: none;
         }
         
+        .feedback-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .feedback-header h2 {
+            margin-bottom: 8px;
+        }
+        
+        .feedback-header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .feedback-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 18px;
+        }
+        
+        .feedback-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
         .rating {
             display: flex;
-            gap: 10px;
-            margin: 15px 0;
+            gap: 8px;
+            margin: 12px 0;
         }
         
         .rating-btn {
             flex: 1;
-            padding: 12px;
-            border: 2px solid #ddd;
+            padding: 12px 8px;
+            border: 2px solid #e0e0e0;
             border-radius: 10px;
             background: white;
-            font-size: 18px;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .rating-btn:hover {
+            border-color: #007AFF;
+            background: #f8fbff;
         }
         
         .rating-btn.selected {
             border-color: #007AFF;
-            background: #f0f7ff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .rating-btn .emoji {
+            font-size: 20px;
+        }
+        
+        .rating-btn .label {
+            font-size: 10px;
+            opacity: 0.8;
         }
         
         .feedback-question {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         .feedback-question label {
             display: block;
             margin-bottom: 8px;
             font-weight: 500;
+            font-size: 14px;
+            color: #444;
+        }
+        
+        .feedback-question .hint {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
         }
         
         textarea {
             width: 100%;
             padding: 12px;
-            border: 2px solid #ddd;
+            border: 2px solid #e0e0e0;
             border-radius: 10px;
             font-size: 14px;
             resize: none;
             font-family: inherit;
+            transition: border-color 0.2s;
         }
         
         textarea:focus {
             outline: none;
             border-color: #007AFF;
+        }
+        
+        textarea::placeholder {
+            color: #aaa;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .checkbox-btn {
+            padding: 8px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 20px;
+            background: white;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .checkbox-btn:hover {
+            border-color: #007AFF;
+        }
+        
+        .checkbox-btn.selected {
+            border-color: #007AFF;
+            background: #f0f7ff;
+            color: #007AFF;
+        }
+        
+        .quick-issue-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            font-size: 13px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .quick-issue-btn:hover {
+            border-color: #FF9500;
+            background: #fff8f0;
+        }
+        
+        .quick-issue-btn.selected {
+            border-color: #FF9500;
+            background: #fff8f0;
+            color: #e67e00;
+        }
+        
+        .feedback-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+            font-size: 13px;
+        }
+        
+        .feedback-summary strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .submit-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .submit-options .btn {
+            flex: 1;
         }
         
         .config-section {
@@ -509,57 +648,153 @@
         
         <!-- Feedback Card -->
         <div class="card feedback-form" id="feedbackCard">
-            <h2>📝 Beta Feedback</h2>
-            <p style="color: #666; margin-bottom: 20px;">Help us improve!</p>
+            <div class="feedback-header">
+                <h2>📝 Beta Feedback</h2>
+                <p>Your feedback helps us make the app better!</p>
+            </div>
             
-            <div class="feedback-question">
-                <label>How accurate were the results?</label>
-                <div class="rating" data-name="accuracy">
-                    <button class="rating-btn" data-value="1">1</button>
-                    <button class="rating-btn" data-value="2">2</button>
-                    <button class="rating-btn" data-value="3">3</button>
-                    <button class="rating-btn" data-value="4">4</button>
-                    <button class="rating-btn" data-value="5">5</button>
+            <!-- Session Summary -->
+            <div class="feedback-summary" id="feedbackSummary">
+                <strong>This Session:</strong>
+                <span id="sessionSummary">Loading...</span>
+            </div>
+            
+            <!-- Overall Experience -->
+            <div class="feedback-section">
+                <div class="feedback-section-title">⭐ Overall Experience</div>
+                <div class="feedback-question">
+                    <label>How well did the app pick the best photos?</label>
+                    <div class="rating" data-name="overall">
+                        <button class="rating-btn" data-value="1">
+                            <span class="emoji">😞</span>
+                            <span class="label">Poor</span>
+                        </button>
+                        <button class="rating-btn" data-value="2">
+                            <span class="emoji">😕</span>
+                            <span class="label">Fair</span>
+                        </button>
+                        <button class="rating-btn" data-value="3">
+                            <span class="emoji">😐</span>
+                            <span class="label">OK</span>
+                        </button>
+                        <button class="rating-btn" data-value="4">
+                            <span class="emoji">🙂</span>
+                            <span class="label">Good</span>
+                        </button>
+                        <button class="rating-btn" data-value="5">
+                            <span class="emoji">😍</span>
+                            <span class="label">Great!</span>
+                        </button>
+                    </div>
                 </div>
             </div>
             
-            <div class="feedback-question">
-                <label>Eye detection accuracy?</label>
-                <div class="rating" data-name="eyeDetection">
-                    <button class="rating-btn" data-value="1">1</button>
-                    <button class="rating-btn" data-value="2">2</button>
-                    <button class="rating-btn" data-value="3">3</button>
-                    <button class="rating-btn" data-value="4">4</button>
-                    <button class="rating-btn" data-value="5">5</button>
+            <!-- Specific Features -->
+            <div class="feedback-section">
+                <div class="feedback-section-title">🔍 Feature Accuracy</div>
+                
+                <div class="feedback-question">
+                    <label>Face & Expression Detection</label>
+                    <div class="hint">Did it correctly identify faces, closed eyes, smiles?</div>
+                    <div class="rating" data-name="faceDetection">
+                        <button class="rating-btn" data-value="1"><span class="emoji">1</span></button>
+                        <button class="rating-btn" data-value="2"><span class="emoji">2</span></button>
+                        <button class="rating-btn" data-value="3"><span class="emoji">3</span></button>
+                        <button class="rating-btn" data-value="4"><span class="emoji">4</span></button>
+                        <button class="rating-btn" data-value="5"><span class="emoji">5</span></button>
+                    </div>
+                </div>
+                
+                <div class="feedback-question">
+                    <label>Blur Detection</label>
+                    <div class="hint">Did it correctly identify blurry vs sharp photos?</div>
+                    <div class="rating" data-name="blurDetection">
+                        <button class="rating-btn" data-value="1"><span class="emoji">1</span></button>
+                        <button class="rating-btn" data-value="2"><span class="emoji">2</span></button>
+                        <button class="rating-btn" data-value="3"><span class="emoji">3</span></button>
+                        <button class="rating-btn" data-value="4"><span class="emoji">4</span></button>
+                        <button class="rating-btn" data-value="5"><span class="emoji">5</span></button>
+                    </div>
+                </div>
+                
+                <div class="feedback-question">
+                    <label>Similar Photo Grouping</label>
+                    <div class="hint">Did it group similar photos together correctly?</div>
+                    <div class="rating" data-name="grouping">
+                        <button class="rating-btn" data-value="1"><span class="emoji">1</span></button>
+                        <button class="rating-btn" data-value="2"><span class="emoji">2</span></button>
+                        <button class="rating-btn" data-value="3"><span class="emoji">3</span></button>
+                        <button class="rating-btn" data-value="4"><span class="emoji">4</span></button>
+                        <button class="rating-btn" data-value="5"><span class="emoji">5</span></button>
+                    </div>
                 </div>
             </div>
             
-            <div class="feedback-question">
-                <label>Photo grouping accuracy?</label>
-                <div class="rating" data-name="grouping">
-                    <button class="rating-btn" data-value="1">1</button>
-                    <button class="rating-btn" data-value="2">2</button>
-                    <button class="rating-btn" data-value="3">3</button>
-                    <button class="rating-btn" data-value="4">4</button>
-                    <button class="rating-btn" data-value="5">5</button>
+            <!-- Quick Issue Selection -->
+            <div class="feedback-section">
+                <div class="feedback-section-title">⚠️ Any Issues? (Select all that apply)</div>
+                <div class="checkbox-group" id="issueCheckboxes">
+                    <button class="checkbox-btn" data-issue="wrong-best">Wrong "Best" picked</button>
+                    <button class="checkbox-btn" data-issue="missed-blur">Missed blurry photos</button>
+                    <button class="checkbox-btn" data-issue="missed-eyes">Missed closed eyes</button>
+                    <button class="checkbox-btn" data-issue="bad-grouping">Bad grouping</button>
+                    <button class="checkbox-btn" data-issue="too-slow">Too slow</button>
+                    <button class="checkbox-btn" data-issue="crashed">App crashed</button>
+                    <button class="checkbox-btn" data-issue="confusing-ui">Confusing UI</button>
+                    <button class="checkbox-btn" data-issue="none">No issues! ✓</button>
                 </div>
             </div>
             
-            <div class="feedback-question">
-                <label>Any photos it got wrong?</label>
-                <textarea id="mistakes" rows="3" placeholder="Describe any mistakes..."></textarea>
+            <!-- Detailed Feedback -->
+            <div class="feedback-section">
+                <div class="feedback-section-title">💬 Tell Us More</div>
+                
+                <div class="feedback-question">
+                    <label>What specific mistakes did you notice?</label>
+                    <textarea id="mistakes" rows="3" placeholder="e.g., 'Photo 3 in Group 2 should have been the best - it had better lighting and everyone was smiling'"></textarea>
+                </div>
+                
+                <div class="feedback-question">
+                    <label>What would make this app more useful for you?</label>
+                    <textarea id="features" rows="3" placeholder="e.g., 'I'd love to see it work with videos too' or 'Add a way to manually override selections'"></textarea>
+                </div>
+                
+                <div class="feedback-question">
+                    <label>What type of photos did you test with?</label>
+                    <div class="checkbox-group" id="photoTypeCheckboxes">
+                        <button class="checkbox-btn" data-type="selfies">Selfies</button>
+                        <button class="checkbox-btn" data-type="group">Group photos</button>
+                        <button class="checkbox-btn" data-type="landscape">Landscapes</button>
+                        <button class="checkbox-btn" data-type="pets">Pets</button>
+                        <button class="checkbox-btn" data-type="kids">Kids/Family</button>
+                        <button class="checkbox-btn" data-type="events">Events</button>
+                        <button class="checkbox-btn" data-type="food">Food</button>
+                        <button class="checkbox-btn" data-type="other">Other</button>
+                    </div>
+                </div>
             </div>
             
-            <div class="feedback-question">
-                <label>Feature requests?</label>
-                <textarea id="features" rows="3" placeholder="What would you like added?"></textarea>
+            <!-- Contact (Optional) -->
+            <div class="feedback-section">
+                <div class="feedback-section-title">📧 Stay in Touch (Optional)</div>
+                <div class="feedback-question">
+                    <label>Your name</label>
+                    <input type="text" id="userName" placeholder="How should we call you?" style="width:100%; padding:12px; border:2px solid #e0e0e0; border-radius:10px; font-size:14px;">
+                </div>
+                <div class="feedback-question" style="margin-top:12px;">
+                    <label>Email (for follow-up or beta updates)</label>
+                    <input type="email" id="userEmail" placeholder="your@email.com" style="width:100%; padding:12px; border:2px solid #e0e0e0; border-radius:10px; font-size:14px;">
+                </div>
             </div>
             
-            <button class="btn btn-primary" id="submitFeedback">
-                ✅ Submit Feedback
-            </button>
+            <!-- Submit Buttons -->
+            <div class="submit-options">
+                <button class="btn btn-primary" id="submitFeedback">
+                    💬 Send via WhatsApp
+                </button>
+            </div>
             
-            <button class="btn btn-secondary" id="backToResults">
+            <button class="btn btn-secondary" id="backToResults" style="width:100%;">
                 ← Back to Results
             </button>
         </div>
@@ -1036,6 +1271,15 @@
         document.getElementById('feedbackBtn').addEventListener('click', () => {
             resultsCard.style.display = 'none';
             feedbackCard.style.display = 'block';
+            
+            // Populate session summary
+            const totalPhotos = analysisResults.length;
+            const bestPhotos = analysisResults.filter(r => r.is_best).length;
+            const blurryPhotos = analysisResults.filter(r => r.is_blurry).length;
+            const closedEyes = analysisResults.filter(r => r.has_closed_eyes).length;
+            
+            document.getElementById('sessionSummary').innerHTML = 
+                `${totalPhotos} photos analyzed → ${bestPhotos} best picks, ${blurryPhotos} blurry, ${closedEyes} closed eyes`;
         });
         
         document.getElementById('backToResults').addEventListener('click', () => {
@@ -1048,25 +1292,167 @@
             showToast(`${bestPhotos.length} best photos identified!`);
         });
         
+        // Checkbox button toggles (for issues and photo types)
+        document.querySelectorAll('.checkbox-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Special handling for "No issues" button
+                if (btn.dataset.issue === 'none') {
+                    document.querySelectorAll('#issueCheckboxes .checkbox-btn').forEach(b => {
+                        b.classList.remove('selected');
+                    });
+                    btn.classList.add('selected');
+                } else if (btn.dataset.issue) {
+                    // Deselect "No issues" when selecting any other issue
+                    document.querySelector('[data-issue="none"]')?.classList.remove('selected');
+                    btn.classList.toggle('selected');
+                } else {
+                    btn.classList.toggle('selected');
+                }
+            });
+        });
+        
         document.getElementById('submitFeedback').addEventListener('click', () => {
+            // Gather all feedback data
+            const selectedIssues = Array.from(document.querySelectorAll('#issueCheckboxes .checkbox-btn.selected'))
+                .map(btn => btn.dataset.issue);
+            
+            const selectedPhotoTypes = Array.from(document.querySelectorAll('#photoTypeCheckboxes .checkbox-btn.selected'))
+                .map(btn => btn.dataset.type);
+            
             const feedback = {
+                // Meta
                 timestamp: new Date().toISOString(),
                 serverVersion: serverVersion,
-                numPhotos: analysisResults.length,
-                accuracy: document.querySelector('[data-name="accuracy"] .selected')?.dataset.value || 0,
-                eyeDetection: document.querySelector('[data-name="eyeDetection"] .selected')?.dataset.value || 0,
-                grouping: document.querySelector('[data-name="grouping"] .selected')?.dataset.value || 0,
-                mistakes: document.getElementById('mistakes').value,
-                features: document.getElementById('features').value
+                appVersion: 'v3.1',
+                
+                // Session stats
+                session: {
+                    totalPhotos: analysisResults.length,
+                    bestPhotos: analysisResults.filter(r => r.is_best).length,
+                    blurryDetected: analysisResults.filter(r => r.is_blurry).length,
+                    closedEyesDetected: analysisResults.filter(r => r.has_closed_eyes).length,
+                    groupsCreated: document.querySelectorAll('.group-header').length
+                },
+                
+                // Ratings (1-5)
+                ratings: {
+                    overall: document.querySelector('[data-name="overall"] .selected')?.dataset.value || null,
+                    faceDetection: document.querySelector('[data-name="faceDetection"] .selected')?.dataset.value || null,
+                    blurDetection: document.querySelector('[data-name="blurDetection"] .selected')?.dataset.value || null,
+                    grouping: document.querySelector('[data-name="grouping"] .selected')?.dataset.value || null
+                },
+                
+                // Issues & categories
+                issues: selectedIssues,
+                photoTypes: selectedPhotoTypes,
+                
+                // Free text
+                mistakesDescription: document.getElementById('mistakes').value.trim(),
+                featureRequests: document.getElementById('features').value.trim(),
+                
+                // Contact info (optional)
+                userName: document.getElementById('userName').value.trim(),
+                userEmail: document.getElementById('userEmail').value.trim()
             };
             
-            navigator.clipboard.writeText(JSON.stringify(feedback, null, 2))
-                .then(() => showToast('Feedback copied! Please send to developer.'))
-                .catch(() => showToast('Thanks for your feedback!'));
+            // Validate - at least one rating should be filled
+            const hasRating = Object.values(feedback.ratings).some(v => v !== null);
+            if (!hasRating && !feedback.mistakesDescription && !feedback.featureRequests && selectedIssues.length === 0) {
+                showToast('Please provide at least one rating or comment');
+                return;
+            }
             
-            feedbackCard.style.display = 'none';
-            resultsCard.style.display = 'block';
+            // Create formatted feedback text for WhatsApp
+            const feedbackText = formatFeedbackForEmail(feedback);
+            
+            // Open WhatsApp with pre-filled feedback
+            const whatsappNumber = '919893115232'; // India country code + number
+            const whatsappText = encodeURIComponent(feedbackText);
+            const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappText}`;
+            
+            // Copy to clipboard as backup
+            navigator.clipboard.writeText(feedbackText)
+                .then(() => {
+                    // Open WhatsApp
+                    window.open(whatsappLink, '_blank');
+                    showToast('📋 Opening WhatsApp...');
+                })
+                .catch(() => {
+                    // Fallback - just open WhatsApp
+                    window.open(whatsappLink, '_blank');
+                    showToast('📋 Opening WhatsApp...');
+                });
+            
+            // Log feedback to console for debugging
+            console.log('Feedback submitted:', feedback);
+            
+            // Reset form and go back
+            setTimeout(() => {
+                feedbackCard.style.display = 'none';
+                resultsCard.style.display = 'block';
+                resetFeedbackForm();
+            }, 1000);
         });
+        
+        function formatFeedbackForEmail(feedback) {
+            let text = `=== PHOTO OPTIMIZER FEEDBACK ===\n\n`;
+            
+            text += `📊 SESSION STATS\n`;
+            text += `Photos: ${feedback.session.totalPhotos} → ${feedback.session.bestPhotos} best picks\n`;
+            text += `Blurry detected: ${feedback.session.blurryDetected}\n`;
+            text += `Closed eyes detected: ${feedback.session.closedEyesDetected}\n`;
+            text += `Groups: ${feedback.session.groupsCreated}\n\n`;
+            
+            text += `⭐ RATINGS (1-5)\n`;
+            text += `Overall: ${feedback.ratings.overall || 'Not rated'}\n`;
+            text += `Face Detection: ${feedback.ratings.faceDetection || 'Not rated'}\n`;
+            text += `Blur Detection: ${feedback.ratings.blurDetection || 'Not rated'}\n`;
+            text += `Grouping: ${feedback.ratings.grouping || 'Not rated'}\n\n`;
+            
+            if (feedback.issues.length > 0) {
+                text += `⚠️ ISSUES REPORTED\n`;
+                text += feedback.issues.join(', ') + '\n\n';
+            }
+            
+            if (feedback.photoTypes.length > 0) {
+                text += `📷 PHOTO TYPES TESTED\n`;
+                text += feedback.photoTypes.join(', ') + '\n\n';
+            }
+            
+            if (feedback.mistakesDescription) {
+                text += `🔍 MISTAKES NOTICED\n`;
+                text += feedback.mistakesDescription + '\n\n';
+            }
+            
+            if (feedback.featureRequests) {
+                text += `💡 FEATURE REQUESTS\n`;
+                text += feedback.featureRequests + '\n\n';
+            }
+            
+            text += `---\n`;
+            text += `Server: ${feedback.serverVersion} | App: ${feedback.appVersion}\n`;
+            text += `Time: ${feedback.timestamp}\n`;
+            
+            if (feedback.userName) {
+                text += `From: ${feedback.userName}`;
+                if (feedback.userEmail) text += ` <${feedback.userEmail}>`;
+                text += '\n';
+            }
+            
+            return text;
+        }
+        
+        function resetFeedbackForm() {
+            // Clear all selections
+            document.querySelectorAll('.rating-btn.selected, .checkbox-btn.selected').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            // Clear text fields
+            document.getElementById('mistakes').value = '';
+            document.getElementById('features').value = '';
+            document.getElementById('userName').value = '';
+            document.getElementById('userEmail').value = '';
+        }
         
         // Rating buttons
         document.querySelectorAll('.rating').forEach(rating => {
